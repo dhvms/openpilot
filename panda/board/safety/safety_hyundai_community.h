@@ -13,7 +13,6 @@ int LKAS11_op = 0;
 int MDPS12_op = 0;
 int CLU11_op = 0;
 int SCC12_op = 0;
-int SCC12_car = 0;
 int EMS11_op = 0;
 int MDPS_bus = -1;
 int SCC_bus = -1;
@@ -265,7 +264,7 @@ static int hyundai_community_tx_hook(CANPacket_t *to_send, bool longitudinal_all
 
   if (addr == 593) { MDPS12_op = 20; }
   if (addr == 1265 && bus == 1) { CLU11_op = 20; } // only count mesage created for MDPS
-  if (addr == 1057) { SCC12_op = 20; if (SCC12_car > 0) { SCC12_car -= 1; }}
+  if (addr == 1057) { SCC12_op = 20; }
   if (addr == 790) { EMS11_op = 20; }
 
   // 1 allows the message through
