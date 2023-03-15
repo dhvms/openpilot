@@ -310,6 +310,9 @@ class CarState(CarStateBase):
     # TODO BrakeLights, TPMS, AutoHold
     ret.brakeLights = ret.brakePressed
 
+    if self.CP.hasNav:
+      ret.navSpeedLimit = cp.vl["CLUSTER_SPEED_LIMIT"]["SPEED_LIMIT_1"]
+
     # TODO
     #CruiseStateManager.instance().update(ret, self.main_buttons, self.cruise_buttons, BUTTONS_DICT,
     #        cruise_state_control=self.CP.openpilotLongitudinalControl and CruiseStateManager.instance().cruise_state_control)
@@ -681,7 +684,11 @@ class CarState(CarStateBase):
       checks += [
         ("ACCELERATOR_BRAKE_ALT", 100),
       ]
-
+    
+    if CP.flags & HyundaiFlags.CANFD_HDA2 and CP.hasNav:
+      signals.append(("SPEED_LIMIT_1", "CLUSTER_SPEED_LIMIT"))
+      checks.append(("CLUSTER_SPEED_LIMIT", 10))
+    
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, get_e_can_bus(CP))
 
   @staticmethod
@@ -708,5 +715,9 @@ class CarState(CarStateBase):
       checks += [
         ("SCC_CONTROL", 50),
       ]
+
+    if CP.flags & HyundaiFlags.CANFD_HDA2 and CP.hasNav:
+      signals.append(("SPEED_LIMIT_1", "CLUSTER_SPEED_LIMIT"))
+      checks.append(("CLUSTER_SPEED_LIMIT", 10))
 
     return CANParser(DBC[CP.carFingerprint]["pt"], signals, checks, 6)

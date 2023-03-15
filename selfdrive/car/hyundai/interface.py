@@ -197,12 +197,12 @@ class CarInterface(CarInterfaceBase):
     elif candidate == CAR.KIA_EV6:
       ret.mass = 2055 + STD_CARGO_KG
       ret.wheelbase = 2.9
-      ret.steerRatio = 16.
+      ret.steerRatio = 14.25
       tire_stiffness_factor = 0.65
     elif candidate == CAR.IONIQ_5:
       ret.mass = 2012 + STD_CARGO_KG
       ret.wheelbase = 3.0
-      ret.steerRatio = 16.
+      ret.steerRatio = 14.26
       tire_stiffness_factor = 0.65
     elif candidate == CAR.KIA_SPORTAGE_HYBRID_5TH_GEN:
       ret.mass = 1767. + STD_CARGO_KG  # SX Prestige trim support only
@@ -292,6 +292,8 @@ class CarInterface(CarInterfaceBase):
         ret.safetyConfigs[1].safetyParam |= Panda.FLAG_HYUNDAI_CAMERA_SCC
 
       ret.sccBus = 0
+      bus = 5 if ret.flags & HyundaiFlags.CANFD_HDA2 else 4
+      ret.hasNav = 0x1fa in fingerprint[bus]
     else:
       if candidate in LEGACY_SAFETY_MODE_CAR:
         # these cars require a special panda safety mode due to missing counters and checksums in the messages
