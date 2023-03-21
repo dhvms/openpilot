@@ -306,7 +306,7 @@ class CarInterfaceBase(ABC):
     # we engage when pcm is active (rising edge)
     # enabling can optionally be blocked by the car interface
     if pcm_enable:
-      if cs_out.cruiseState.available and not self.CS.out.cruiseState.available and allow_enable:
+      if cs_out.cruiseState.available and not self.CS.out.cruiseState.available or allow_enable:
         events.add(EventName.pcmEnable)
       elif not cs_out.cruiseState.available:
         events.add(EventName.pcmDisable)
