@@ -11,7 +11,7 @@ from typing import Optional, List, Union, Dict, Deque
 from collections import deque
 
 from cereal import log
-from cereal.services import service_list
+from cereal.services import SERVICE_LIST
 
 assert MultiplePublishersError
 assert MessagingError
@@ -180,7 +180,7 @@ class SubMaster:
       if addr is not None:
         p = self.poller if s not in self.non_polled_services else None
         self.sock[s] = sub_sock(s, poller=p, addr=addr, conflate=True)
-      self.freq[s] = service_list[s].frequency
+      self.freq[s] = SERVICE_LIST[s].frequency
 
       try:
         data = new_message(s)
@@ -287,8 +287,7 @@ class PubMaster:
       dat = dat.to_bytes()
     self.sock[s].send(dat)
 
-  def wait_for_readers_to_update(self, s: str, timeout: int) -> bool:
-    dt = 0.05
+  def wait_for_readers_to_update(self, s: str, timeout: int, dt: float = 0.05) -> bool:
     for _ in range(int(timeout*(1./dt))):
       if self.sock[s].all_readers_updated():
         return True

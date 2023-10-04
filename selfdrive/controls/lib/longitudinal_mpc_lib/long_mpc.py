@@ -62,7 +62,7 @@ T_IDXS = np.array(T_IDXS_LST)
 FCW_IDXS = T_IDXS < 5.0
 T_DIFFS = np.diff(T_IDXS, prepend=[0.])
 COMFORT_BRAKE = 2.5
-STOP_DISTANCE = 6.0
+STOP_DISTANCE = 5.0
 
 def get_jerk_factor(personality=log.LongitudinalPersonality.standard):
   if personality==log.LongitudinalPersonality.relaxed:
@@ -322,7 +322,7 @@ class LongitudinalMpc:
     self.x0[1] = v
     self.x0[2] = a
     if abs(v_prev - v) > 2.:  # probably only helps if v < v_prev
-      for i in range(0, N+1):
+      for i in range(N+1):
         self.solver.set(i, 'x', self.x0)
 
   @staticmethod

@@ -1,6 +1,9 @@
 #include "selfdrive/ui/qt/onroad.h"
 
+#include <algorithm>
 #include <cmath>
+#include <map>
+#include <memory>
 
 #include <QDebug>
 #include <QSound>
@@ -63,6 +66,7 @@ OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
   setAttribute(Qt::WA_OpaquePaintEvent);
   QObject::connect(uiState(), &UIState::uiUpdate, this, &OnroadWindow::updateState);
   QObject::connect(uiState(), &UIState::offroadTransition, this, &OnroadWindow::offroadTransition);
+  QObject::connect(uiState(), &UIState::primeChanged, this, &OnroadWindow::primeChanged);
 }
 
 void OnroadWindow::updateState(const UIState &s) {
@@ -101,7 +105,7 @@ void OnroadWindow::mousePressEvent(QMouseEvent* e) {
 void OnroadWindow::offroadTransition(bool offroad) {
 #ifdef ENABLE_MAPS
   if (!offroad) {
-    if (map == nullptr && (uiState()->primeType() || !MAPBOX_TOKEN.isEmpty())) {
+    if (map == nullptr && (uiState()->hasPrime() || !MAPBOX_TOKEN.isEmpty())) {
       auto m = new MapPanel(get_mapbox_settings());
       map = m;
 
@@ -119,6 +123,17 @@ void OnroadWindow::offroadTransition(bool offroad) {
 #endif
 
   alerts->updateAlert({});
+}
+
+void OnroadWindow::primeChanged(bool prime) {
+#ifdef ENABLE_MAPS
+  if (map && (!prime && MAPBOX_TOKEN.isEmpty())) {
+    nvg->map_settings_btn->setEnabled(false);
+    nvg->map_settings_btn->setVisible(false);
+    map->deleteLater();
+    map = nullptr;
+  }
+#endif
 }
 
 void OnroadWindow::paintEvent(QPaintEvent *event) {
@@ -197,7 +212,6 @@ void OnroadAlerts::paintEvent(QPaintEvent *event) {
 ExperimentalButton::ExperimentalButton(QWidget *parent) : experimental_mode(false), engageable(false), QPushButton(parent) {
   setFixedSize(btn_size, btn_size);
 
-  params = Params();
   engage_img = loadPixmap("../assets/img_chffr_wheel.png", {img_size, img_size});
   experimental_img = loadPixmap("../assets/img_experimental.svg", {img_size, img_size});
   QObject::connect(this, &QPushButton::clicked, this, &ExperimentalButton::changeMode);

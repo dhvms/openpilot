@@ -1,7 +1,8 @@
+import re
 from collections import defaultdict
 from dataclasses import dataclass, field
 from enum import Enum, IntFlag
-from typing import Dict, List, Union
+from typing import Dict, List, Set, Union
 
 from cereal import car
 from openpilot.common.conversions import Conversions as CV
@@ -42,6 +43,7 @@ class CarControllerParams:
 class ToyotaFlags(IntFlag):
   HYBRID = 1
   SMART_DSU = 2
+  DISABLE_RADAR = 4
 
 
 class CAR:
@@ -129,7 +131,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.CAMRY: ToyotaCarInfo("Toyota Camry 2018-20", video_link="https://www.youtube.com/watch?v=fkcjviZY9CM", footnotes=[Footnote.CAMRY]),
   CAR.CAMRYH: ToyotaCarInfo("Toyota Camry Hybrid 2018-20", video_link="https://www.youtube.com/watch?v=Q2DYY0AWKgk"),
   CAR.CAMRY_TSS2: ToyotaCarInfo("Toyota Camry 2021-23", footnotes=[Footnote.CAMRY]),
-  CAR.CAMRYH_TSS2: ToyotaCarInfo("Toyota Camry Hybrid 2021-23"),
+  CAR.CAMRYH_TSS2: ToyotaCarInfo("Toyota Camry Hybrid 2021-24"),
   CAR.CHR: ToyotaCarInfo("Toyota C-HR 2017-20"),
   CAR.CHR_TSS2: ToyotaCarInfo("Toyota C-HR 2021"),
   CAR.CHRH: ToyotaCarInfo("Toyota C-HR Hybrid 2017-20"),
@@ -184,7 +186,7 @@ CAR_INFO: Dict[str, Union[ToyotaCarInfo, List[ToyotaCarInfo]]] = {
   CAR.LEXUS_ES_TSS2: ToyotaCarInfo("Lexus ES 2019-22"),
   CAR.LEXUS_ESH_TSS2: ToyotaCarInfo("Lexus ES Hybrid 2019-23", video_link="https://youtu.be/BZ29osRVJeg?t=12"),
   CAR.LEXUS_IS: ToyotaCarInfo("Lexus IS 2017-19"),
-  CAR.LEXUS_IS_TSS2: ToyotaCarInfo("Lexus IS 2023"),
+  CAR.LEXUS_IS_TSS2: ToyotaCarInfo("Lexus IS 2022-23"),
   CAR.LEXUS_NX: ToyotaCarInfo("Lexus NX 2018-19"),
   CAR.LEXUS_NXH: ToyotaCarInfo("Lexus NX Hybrid 2018-19"),
   CAR.LEXUS_NX_TSS2: ToyotaCarInfo("Lexus NX 2020-21"),
@@ -232,6 +234,79 @@ STATIC_DSU_MSGS = [
   (0x4CB, (CAR.PRIUS, CAR.RAV4H, CAR.LEXUS_RXH, CAR.LEXUS_NXH, CAR.LEXUS_NX, CAR.RAV4, CAR.COROLLA, CAR.HIGHLANDERH, CAR.HIGHLANDER, CAR.AVALON,
            CAR.SIENNA, CAR.LEXUS_CTH, CAR.LEXUS_ES, CAR.LEXUS_ESH, CAR.LEXUS_RX, CAR.PRIUS_V), 0, 100, b'\x0c\x00\x00\x00\x00\x00\x00\x00'),
 ]
+
+
+def get_platform_codes(fw_versions: List[bytes]) -> Dict[bytes, Set[bytes]]:
+  # Returns sub versions in a dict so comparisons can be made within part-platform-major_version combos
+  codes = defaultdict(set)  # Optional[part]-platform-major_version: set of sub_version
+  for fw in fw_versions:
+    # FW versions returned from UDS queries can return multiple fields/chunks of data (different ECU calibrations, different data?)
+    #  and are prefixed with a byte that describes how many chunks of data there are.
+    # But FW returned from KWP requires querying of each sub-data id and does not have a length prefix.
+
+    length_code = 1
+    length_code_match = FW_LEN_CODE.search(fw)
+    if length_code_match is not None:
+      length_code = length_code_match.group()[0]
+      fw = fw[1:]
+
+    # fw length should be multiple of 16 bytes (per chunk, even if no length code), skip parsing if unexpected length
+    if length_code * FW_CHUNK_LEN != len(fw):
+      continue
+
+    chunks = [fw[FW_CHUNK_LEN * i:FW_CHUNK_LEN * i + FW_CHUNK_LEN].strip(b'\x00 ') for i in range(length_code)]
+
+    # only first is considered for now since second is commonly shared (TODO: understand that)
+    first_chunk = chunks[0]
+    if len(first_chunk) == 8:
+      # TODO: no part number, but some short chunks have it in subsequent chunks
+      fw_match = SHORT_FW_PATTERN.search(first_chunk)
+      if fw_match is not None:
+        platform, major_version, sub_version = fw_match.groups()
+        codes[b'-'.join((platform, major_version))].add(sub_version)
+
+    elif len(first_chunk) == 10:
+      fw_match = MEDIUM_FW_PATTERN.search(first_chunk)
+      if fw_match is not None:
+        part, platform, major_version, sub_version = fw_match.groups()
+        codes[b'-'.join((part, platform, major_version))].add(sub_version)
+
+    elif len(first_chunk) == 12:
+      fw_match = LONG_FW_PATTERN.search(first_chunk)
+      if fw_match is not None:
+        part, platform, major_version, sub_version = fw_match.groups()
+        codes[b'-'.join((part, platform, major_version))].add(sub_version)
+
+  return dict(codes)
+
+
+# Regex patterns for parsing more general platform-specific identifiers from FW versions.
+# - Part number: Toyota part number (usually last character needs to be ignored to find a match).
+#    Each ECU address has just one part number.
+# - Platform: usually multiple codes per an openpilot platform, however this is the least variable and
+#    is usually shared across ECUs and model years signifying this describes something about the specific platform.
+#    This describes more generational changes (TSS-P vs TSS2), or manufacture region.
+# - Major version: second least variable part of the FW version. Seen splitting cars by model year/API such as
+#    RAV4 2022/2023 and Avalon. Used to differentiate cars where API has changed slightly, but is not a generational change.
+#    It is important to note that these aren't always consecutive, for example:
+#    Avalon 2016-18's fwdCamera has these major versions: 01, 03 while 2019 has: 02
+# - Sub version: exclusive to major version, but shared with other cars. Should only be used for further filtering.
+#    Seen bumped in TSB FW updates, and describes other minor differences.
+SHORT_FW_PATTERN = re.compile(b'[A-Z0-9](?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{2})(?P<sub_version>[A-Z0-9]{3})')
+MEDIUM_FW_PATTERN = re.compile(b'(?P<part>[A-Z0-9]{5})(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{1})(?P<sub_version>[A-Z0-9]{2})')
+LONG_FW_PATTERN = re.compile(b'(?P<part>[A-Z0-9]{5})(?P<platform>[A-Z0-9]{2})(?P<major_version>[A-Z0-9]{2})(?P<sub_version>[A-Z0-9]{3})')
+FW_LEN_CODE = re.compile(b'^[\x01-\x03]')  # highest seen is 3 chunks, 16 bytes each
+FW_CHUNK_LEN = 16
+
+# List of ECUs that are most unique across openpilot platforms
+# TODO: use hybrid ECU, splits similar ICE and hybrid variants
+# - fwdCamera: describes actual features related to ADAS. For example, on the Avalon it describes
+#    when TSS-P became standard, whether the car supports stop and go, and whether it's TSS2.
+#    On the RAV4, it describes the move to the radar doing ACC, and the use of LTA for lane keeping.
+# - abs: differentiates hybrid/ICE on most cars (Corolla TSS2 is an exception)
+# - eps: describes lateral API changes for the EPS, such as using LTA for lane keeping and rejecting LKA messages
+PLATFORM_CODE_ECUS = [Ecu.fwdCamera, Ecu.abs, Ecu.eps]
+
 
 # Some ECUs that use KWP2000 have their FW versions on non-standard data identifiers.
 # Toyota diagnostic software first gets the supported data ids, then queries them one by one.
@@ -640,12 +715,14 @@ FW_VERSIONS = {
     (Ecu.engine, 0x700, None): [
       b'\x018966306Q6000\x00\x00\x00\x00',
       b'\x018966306Q7000\x00\x00\x00\x00',
+      b'\x018966306T0000\x00\x00\x00\x00',
       b'\x018966306V1000\x00\x00\x00\x00',
       b'\x01896633T20000\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 15): [
       b'\x018821F6201200\x00\x00\x00\x00',
       b'\x018821F6201300\x00\x00\x00\x00',
+      b'\x018821F6201400\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 109): [
       b'\x028646F3305200\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
@@ -1257,17 +1334,21 @@ FW_VERSIONS = {
   CAR.LEXUS_IS_TSS2: {
     (Ecu.engine, 0x700, None): [
       b'\x018966353S1000\x00\x00\x00\x00',
+      b'\x018966353S2000\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
+      b'\x01F15265337200\x00\x00\x00\x00',
       b'\x01F15265342000\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'8965B53450\x00\x00\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
+      b'\x018821F6201200\x00\x00\x00\x00',
       b'\x018821F6201300\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
+      b'\x028646F5303300\x00\x00\x00\x008646G5301200\x00\x00\x00\x00',
       b'\x028646F5303400\x00\x00\x00\x008646G3304000\x00\x00\x00\x00',
     ],
   },
@@ -1572,6 +1653,7 @@ FW_VERSIONS = {
     (Ecu.engine, 0x700, None): [
       b'\x01896634A88100\x00\x00\x00\x00',
       b'\x01896634AJ2000\x00\x00\x00\x00',
+      b'\x01896634A89100\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F0R03100\x00\x00\x00\x00',
@@ -1671,6 +1753,7 @@ FW_VERSIONS = {
     (Ecu.abs, 0x7b0, None): [
       b'\x01F15264283200\x00\x00\x00\x00',
       b'\x01F15264283300\x00\x00\x00\x00',
+      b'\x01F152642F1000\x00\x00\x00\x00',
     ],
     (Ecu.eps, 0x7a1, None): [
       b'\x028965B0R11000\x00\x00\x00\x008965B0R12000\x00\x00\x00\x00',
@@ -1681,15 +1764,17 @@ FW_VERSIONS = {
       b'\x01896634AF0000\x00\x00\x00\x00',
     ],
     (Ecu.hybrid, 0x7d2, None): [
+      b'\x02899830R39000\x00\x00\x00\x00899850R20000\x00\x00\x00\x00',
       b'\x02899830R41000\x00\x00\x00\x00899850R20000\x00\x00\x00\x00',
       b'\x028998342C0000\x00\x00\x00\x00899854224000\x00\x00\x00\x00',
-      b'\x02899830R39000\x00\x00\x00\x00899850R20000\x00\x00\x00\x00',
+      b'\x028998342C6000\x00\x00\x00\x00899854224000\x00\x00\x00\x00',
     ],
     (Ecu.fwdRadar, 0x750, 0xf): [
       b'\x018821F0R03100\x00\x00\x00\x00',
     ],
     (Ecu.fwdCamera, 0x750, 0x6d): [
       b'\x028646F0R05100\x00\x00\x00\x008646G0R02100\x00\x00\x00\x00',
+      b'\x028646F0R05200\x00\x00\x00\x008646G0R02200\x00\x00\x00\x00',
     ],
   },
   CAR.SIENNA: {
@@ -1903,6 +1988,7 @@ FW_VERSIONS = {
       b'\x018966378G2000\x00\x00\x00\x00',
       b'\x018966378G3000\x00\x00\x00\x00',
       b'\x018966378B2000\x00\x00\x00\x00',
+      b'\x018966378B3100\x00\x00\x00\x00',
     ],
     (Ecu.abs, 0x7b0, None): [
       b'\x01F152678221\x00\x00\x00\x00\x00\x00',
