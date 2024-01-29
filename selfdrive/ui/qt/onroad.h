@@ -26,7 +26,7 @@ class OnroadAlerts : public QWidget {
   Q_OBJECT
 
 public:
-  OnroadAlerts(QWidget *parent = 0) : QWidget(parent) {};
+  OnroadAlerts(QWidget *parent = 0) : QWidget(parent), scene(uiState()->scene) {} // FrogAi
   void updateAlert(const Alert &a);
 
 protected:
@@ -35,6 +35,7 @@ protected:
 private:
   QColor bg;
   Alert alert = {};
+  const UIScene &scene;
 };
 
 class ExperimentalButton : public QPushButton {
@@ -146,6 +147,9 @@ private:
   ScreenRecoder* recorder;
   std::shared_ptr<QTimer> record_timer;
   QPoint startPos;
+
+  bool showDriverCamera;
+  void showEvent(QShowEvent *event) override;
 };
 
 // container for all onroad widgets

@@ -209,6 +209,12 @@ static void update_state(UIState *s) {
     float scale = (cam_state.getSensor() == cereal::FrameData::ImageSensor::AR0231) ? 6.0f : 1.0f;
     scene.light_sensor = std::max(100.0f - scale * cam_state.getExposureValPercent(), 0.0f);
   }
+  if (sm.updated("carState")) {
+    const auto carState = sm["carState"].getCarState();
+    if (scene.driver_camera) {
+      scene.show_driver_camera = carState.getGearShifter() == cereal::CarState::GearShifter::REVERSE;
+    }
+  }
   scene.started = sm["deviceState"].getDeviceState().getStarted() && scene.ignition;
 
   scene.world_objects_visible = scene.world_objects_visible ||
@@ -222,6 +228,7 @@ void ui_update_params(UIState *s) {
   auto params = Params();
   s->scene.is_metric = params.getBool("IsMetric");
   s->scene.map_on_left = params.getBool("NavSettingLeftSide");
+  s->scene.driver_camera = params.getBool("DriverCamera");
 }
 
 void UIState::updateStatus() {

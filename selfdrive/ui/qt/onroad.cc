@@ -6,6 +6,7 @@
 #include <memory>
 #include <sstream>
 
+#include <QApplication>
 #include <QDebug>
 #include <QSound>
 #include <QMouseEvent>
@@ -31,7 +32,7 @@ static void drawIcon(QPainter &p, const QPoint &center, const QPixmap &img, cons
   p.setOpacity(1.0);
 }
 
-OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent) {
+OnroadWindow::OnroadWindow(QWidget *parent) : QWidget(parent), scene(uiState()->scene) {
   QVBoxLayout *main_layout  = new QVBoxLayout(this);
   main_layout->setMargin(UI_BORDER_SIZE);
   QStackedLayout *stacked_layout = new QStackedLayout;
@@ -154,7 +155,7 @@ void OnroadAlerts::updateAlert(const Alert &a) {
 }
 
 void OnroadAlerts::paintEvent(QPaintEvent *event) {
-  if (alert.size == cereal::ControlsState::AlertSize::NONE) {
+  if (alert.size == cereal::ControlsState::AlertSize::NONE || scene.show_driver_camera) {
     return;
   }
   static std::map<cereal::ControlsState::AlertSize, const int> alert_heights = {
@@ -325,7 +326,7 @@ void AnnotatedCameraWidget::updateState(const UIState &s) {
   dmActive = dm_state.getIsActiveMode();
   rightHandDM = dm_state.getIsRHD();
 
-  hideBottomIcons = (cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE);
+  hideBottomIcons = (cs.getAlertSize() != cereal::ControlsState::AlertSize::NONE) || showDriverCamera; //Frogai
   dm_fade_state = std::clamp(dm_fade_state+0.2*(0.5-dmActive), 0.0, 1.0);
 
   // hide map settings button for alerts and flip for right hand DM
@@ -455,6 +456,8 @@ void AnnotatedCameraWidget::paintEvent(QPaintEvent *event) {
   const double start_draw_t = millis_since_boot();
   const cereal::ModelDataV2::Reader &model = sm["modelV2"].getModelV2();
 
+  showDriverCamera = s->scene.show_driver_camera;
+
   QPainter p(this);
 
   // Wide or narrow cam dependent on speed
@@ -470,7 +473,8 @@ void AnnotatedCameraWidget::paintEvent(QPaintEvent *event) {
     // for replay of old routes, never go to widecam
     wide_cam_requested = wide_cam_requested && s->scene.calibration_wide_valid;
   }
-  CameraWidget::setStreamType(wide_cam_requested ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
+    CameraWidget::setStreamType(showDriverCamera || !wide_cam_requested ? VISION_STREAM_DRIVER :
+                                wide_cam_requested && !showDriverCamera ? VISION_STREAM_WIDE_ROAD : VISION_STREAM_ROAD);
 
   s->scene.wide_cam = CameraWidget::getStreamType() == VISION_STREAM_WIDE_ROAD;
   if (s->scene.calibration_valid) {
@@ -485,7 +489,7 @@ void AnnotatedCameraWidget::paintEvent(QPaintEvent *event) {
   CameraWidget::paintGL();
   p.endNativePainting();
 
-  if (s->scene.world_objects_visible) {
+  if (s->scene.world_objects_visible && !showDriverCamera) {
     update_model(s, model, sm["uiPlan"].getUiPlan());
     drawHud(p, model);
 
