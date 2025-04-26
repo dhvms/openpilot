@@ -10,7 +10,13 @@ using Car = import "car.capnp";
 # cereal, so use these if you want custom events in your fork.
 
 # you can rename the struct, but don't change the identifier
-struct FrogPilotCarState @0x81c2f05a394cf4af {
+struct FrogPilotCarParams @0x81c2f05a394cf4af {
+  fpFlags @0 :UInt32;
+  isHDA2 @1 :Bool;
+  openpilotLongitudinalControlDisabled @2 :Bool;
+}
+
+struct FrogPilotCarState @0xaedffd8f31e7b55d {
   struct ButtonEvent {
     enum Type {
       lkas @0;
@@ -31,21 +37,21 @@ struct FrogPilotCarState @0x81c2f05a394cf4af {
   pauseLateral @11 :Bool;
   pauseLongitudinal @12 :Bool;
   sportGear @13 :Bool;
-  trafficMode @14 :Bool;
+  trafficModeEnabled @14 :Bool;
 }
 
-struct FrogPilotDeviceState @0xaedffd8f31e7b55d {
+struct FrogPilotDeviceState @0xf35cc4560bbf6ec2 {
   freeSpace @0 :Int16;
   usedSpace @1 :Int16;
 }
 
-struct FrogPilotNavigation @0xf35cc4560bbf6ec2 {
+struct FrogPilotNavigation @0xda96579883444c35 {
   approachingIntersection @0 :Bool;
   approachingTurn @1 :Bool;
   navigationSpeedLimit @2 :Float32;
 }
 
-struct FrogPilotPlan @0xda96579883444c35 {
+struct FrogPilotPlan @0x80ae746ee2596b11 {
   accelerationJerk @0 :Float32;
   accelerationJerkStock @1 :Float32;
   dangerJerk @2 :Float32;
@@ -63,24 +69,21 @@ struct FrogPilotPlan @0xda96579883444c35 {
   redLight @14 :Bool;
   roadCurvature @15 :Float32;
   slcMapSpeedLimit @16 :Float32;
-  slcOverridden @17 :Bool;
-  slcOverriddenSpeed @18 :Float32;
-  slcSpeedLimit @19 :Float32;
-  slcSpeedLimitOffset @20 :Float32;
-  slcSpeedLimitSource @21 :Text;
-  speedJerk @22 :Float32;
-  speedJerkStock @23 :Float32;
-  speedLimitChanged @24 :Bool;
-  tFollow @25 :Float32;
-  togglesUpdated @26 :Bool;
-  unconfirmedSlcSpeedLimit @27 :Float32;
-  upcomingSLCSpeedLimit @28 :Float32;
+  slcMapboxSpeedLimit @17 :Float32;
+  slcNextSpeedLimit @18 :Float32;
+  slcOverriddenSpeed @19 :Float32;
+  slcSpeedLimit @20 :Float32;
+  slcSpeedLimitOffset @21 :Float32;
+  slcSpeedLimitSource @22 :Text;
+  speedJerk @23 :Float32;
+  speedJerkStock @24 :Float32;
+  speedLimitChanged @25 :Bool;
+  tFollow @26 :Float32;
+  togglesUpdated @27 :Bool;
+  unconfirmedSlcSpeedLimit @28 :Float32;
   vCruise @29 :Float32;
   vtscControllingCurve @30 :Bool;
   vtscSpeed @31 :Float32;
-}
-
-struct CustomReserved4 @0x80ae746ee2596b11 {
 }
 
 struct CustomReserved5 @0xa5cd762cd951a455 {
