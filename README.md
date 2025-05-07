@@ -1,5 +1,9 @@
 **본 저장소는 현대/기아/제네시스 전용 저장소입니다.**<br/>
 **This repository is for Hyundai/Kia/Genesis.**
+# NPilot 설치 안내
+
+Given fork username: [dhvms](https://github.com/dhvms/npilot-copy/tree/work-41598f2)  
+Given branch: [work-41598f2](https://github.com/dhvms/npilot-copy/tree/work-41598f2)
 
 * nDashCam<br>
 https://neokii.com/npilot/nDashCam-1.0.8.apk
