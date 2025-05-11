@@ -71,8 +71,12 @@ SUPPORTED_FW_VERSIONS = {
   b"DLhe SCC FHCUP      1.00 1.02 99110-L7000 \x01 \x102    ": ConfigValues(
     default_config=b"\x00\x00\x00\x01\x00\x00",
     tracks_enabled=b"\x00\x00\x00\x01\x00\x01"),
-}
-
+  # 2020 K7 Premier
+  b"YG__ SCC FHCUP      1.00 1.02 99110-F6000         ": ConfigValues(
+    default_config=b"\x00\x00\x00\x01\x00\x00",
+    tracks_enabled=b"\x00\x00\x00\x01\x00\x01"   
+  ),
+}  
 if __name__ == "__main__":
   parser = argparse.ArgumentParser(description='configure radar to output points (or reset to default)')
   parser.add_argument('--default', action="store_true", default=False, help='reset to default configuration (default: false)')
