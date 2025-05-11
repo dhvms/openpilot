@@ -651,7 +651,7 @@ class CAR(Platforms):
   KIA_K7 = HyundaiPlatformConfig(
     [HyundaiCarDocs("Kia K7 2016-2019", "All", car_parts=CarParts.common([CarHarness.hyundai_c]))],
     CarSpecs(mass=1850, wheelbase=2.855, steerRatio=15.5, tireStiffnessFactor=0.7),
-    flags=HyundaiFlags.LEGACY | HyundaiFlags.CLUSTER_GEARS,
+    flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.CHECKSUM_CRC8,
   )
   KIA_K7_HEV = HyundaiPlatformConfig(
     [HyundaiCarDocs("Kia K7 Hybrid 2016-2019", "All", car_parts=CarParts.common([CarHarness.hyundai_c]))],
