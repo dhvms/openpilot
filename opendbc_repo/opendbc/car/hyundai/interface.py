@@ -82,8 +82,9 @@ class CarInterface(CarInterfaceBase):
           ret.flags |= HyundaiFlags.CANFD_ALT_GEARS.value
 
       # radar가 버스 2(RADAR_CAN)에 없거나, DBC에 버스 2 정의가 없으면 unavailable
-      ret.radarUnavailable = (RADAR_START_ADDR not in fingerprint[RADAR_CAN]) \
-                       or (RADAR_CAN not in DBC[ret.carFingerprint])
+      ret.radarUnavailable = (
+          RADAR_START_ADDR not in fingerprint.get(RADAR_CAN, {})  # ← KeyError 방지용 .get()
+          or (RADAR_CAN not in DBC[ret.carFingerprint])
 
     ret.steerActuatorDelay = 0.2  # Default delay
     ret.steerLimitTimer = 0.4
