@@ -346,7 +346,7 @@ class SccSmoother:
     if not self.longcontrol or self.max_speed_clu <= 0:
       self.max_speed_clu = max_speed
     else:
-      kp = 0.01 #if limited_curv else 0.01
+      kp = 0.03 if limited_curv else 0.02
       error = max_speed - self.max_speed_clu
       self.max_speed_clu = self.max_speed_clu + error * kp
 
