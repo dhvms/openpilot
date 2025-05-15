@@ -81,7 +81,7 @@ class SccSmoother:
     self.btn = Buttons.NONE
 
     self.alive_count = ALIVE_COUNT
-    random.shuffle(WAIT_COUNT)
+   # random.shuffle(WAIT_COUNT)
 
     self.slowing_down = False
     self.slowing_down_alert = False
