@@ -85,7 +85,7 @@ class CarInterface(CarInterfaceBase):
       ret.radarUnavailable = (
           RADAR_START_ADDR not in fingerprint.get(RADAR_CAN, {})  # ← KeyError 방지용 .get()
           or (RADAR_CAN not in DBC[ret.carFingerprint])
-
+)
     ret.steerActuatorDelay = 0.2  # Default delay
     ret.steerLimitTimer = 0.4
     CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
