@@ -413,7 +413,7 @@ DBC = {
   CAR.SELTOS: dbc_dict('hyundai_kia_generic', None),
   CAR.MOHAVE: dbc_dict('hyundai_kia_generic', None),
   CAR.K7:{ 
-    "dbc"_dict('hyundai_kia_generic', None),
+    "dbc": dbc_dict_('hyundai_kia_generic', None),
     "radarBus": 2,      # 레이더 CAN 버스
     "sccBus":··2,       # SCC(스마트 크루즈) 버스
   },
