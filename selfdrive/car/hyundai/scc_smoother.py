@@ -299,7 +299,7 @@ class SccSmoother:
       if len(lateralPlan.curvatures) == CONTROL_N:
         # 곡률 두 개(≈ 0.02 s 구간 평균)로 현재 커브 정도 계산
         curv = (lateralPlan.curvatures[-1] 
-            + lateralPlan.curvatures[-2]) / 2.
+                + lateralPlan.curvatures[-2]) / 2.
     
         # 안전 횡가속 한계식을 더 보수적으로 조정
         # 25 mph(≈11 m/s) → 2.3 m/s², 75 mph(≈34 m/s) → 1.6 m/s² 
