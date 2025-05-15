@@ -8,6 +8,8 @@ from opendbc.car.structs import CarParams
 from opendbc.car.docs_definitions import CarFootnote, CarHarness, CarDocs, CarParts, Column
 from opendbc.car.fw_query_definitions import FwQueryConfig, Request, p16
 
+RADAR_CAN = 2  
+
 Ecu = CarParams.Ecu
 
 
@@ -652,6 +654,7 @@ class CAR(Platforms):
     [HyundaiCarDocs("Kia K7 2016-2019", "All", car_parts=CarParts.common([CarHarness.hyundai_c]))],
     CarSpecs(mass=1850, wheelbase=2.855, steerRatio=15.5, tireStiffnessFactor=0.7),
     flags=HyundaiFlags.MANDO_RADAR | HyundaiFlags.CHECKSUM_CRC8,
+    dbc_dict={Bus.pt: "hyundai_kia_generic", RADAR_CAN: "hyundai_kia_mando_front_radar_generated"},
   )
   KIA_K7_HEV = HyundaiPlatformConfig(
     [HyundaiCarDocs("Kia K7 Hybrid 2016-2019", "All", car_parts=CarParts.common([CarHarness.hyundai_c]))],
