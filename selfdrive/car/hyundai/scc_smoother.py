@@ -294,21 +294,30 @@ class SccSmoother:
     return 0
 
   def cal_curve_speed(self, sm, v_ego, frame):
-
     lateralPlan = sm['lateralPlan']
+    
     if len(lateralPlan.curvatures) == CONTROL_N:
-      curv = (lateralPlan.curvatures[-1] + lateralPlan.curvatures[-2]) / 2.
-      a_y_max = 2.975 - v_ego * 0.0375  # ~1.85 @ 75mph, ~2.6 @ 25mph
-      v_curvature = sqrt(a_y_max / max(abs(curv), 1e-4))
-      model_speed = v_curvature * 0.85 * ntune_scc_get("sccCurvatureFactor")
+         # 곡률 두 개(≈ 0.02 s 구간 평균)로 현재 커브 정도 계산
+         curv = (lateralPlan.curvatures[-1] + lateralPlan.curvatures[-2]) / 2.
+    
+         # 안전 횡가속 한계식을 더 보수적으로 조정
+         # 25 mph(≈11 m/s) → 2.3 m/s², 75 mph(≈34 m/s) → 1.6 m/s² 
+         a_y_max = 2.6 - v_ego * 0.03         # ~1.6 @ 75 mph, ~2.3 @ 25 mph
+      
+         v_curvature = sqrt(a_y_max / max(abs(curv), 1e-4))
+         model_speed = v_curvature * 0.85 * ntune_scc_get("sccCurvatureFactor")
 
-      if model_speed < v_ego:
-        self.curve_speed_ms = float(max(model_speed, MIN_CURVE_SPEED))
-      else:
-        self.curve_speed_ms = 255.
+         if model_speed < v_ego:
+             # MIN_CURVE_SPEED(32 kph ≈ 8.9 m/s) 이하로는 더는 낮추지 않음
+             self.curve_speed_ms = float(max(model_speed, MIN_CURVE_SPEED))
+         else:
+             self.curve_speed_ms = 255.  # 제한 없음
+    else:
+       self.curve_speed_ms = 255.
 
-      if np.isnan(self.curve_speed_ms):
-        self.curve_speed_ms = 255.
+    # NaN 방지      
+    if np.isnan(self.curve_speed_ms):
+       self.curve_speed_ms = 255.
     else:
       self.curve_speed_ms = 255.
 
