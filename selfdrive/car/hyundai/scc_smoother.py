@@ -23,12 +23,14 @@ CREEP_SPEED = 2.3
 MIN_SET_SPEED_KPH = V_CRUISE_MIN
 MAX_SET_SPEED_KPH = V_CRUISE_MAX
 
-ALIVE_COUNT = [6, 8]
-WAIT_COUNT = [12, 13, 14, 15, 16]
+ROAD_LIMIT_OFFSET_KPH = 10
+
+ALIVE_COUNT = [8]
+WAIT_COUNT = [12]
 AliveIndex = 0
 WaitIndex = 0
 
-MIN_CURVE_SPEED = 32. * CV.KPH_TO_MS
+MIN_CURVE_SPEED = 30. * CV.KPH_TO_MS
 
 EventName = car.CarEvent.EventName
 
@@ -134,10 +136,12 @@ class SccSmoother:
     apply_limit_speed, road_limit_speed, left_dist, first_started, max_speed_log = \
       road_speed_limiter.get_max_speed(clu11_speed, self.is_metric)
 
+    apply_limit_speed += ROAD_LIMIT_OFFSET_KPH * self.speed_conv_to_clu  #
+
     curv_limit = 0
     self.cal_curve_speed(sm, CS.out.vEgo, frame)
     if self.slow_on_curves and self.curve_speed_ms >= MIN_CURVE_SPEED:
-      max_speed_clu = min(controls.v_cruise_kph * CV.KPH_TO_MS, self.curve_speed_ms) * self.speed_conv_to_clu
+      max_speed_clu = min(controls.v_cruise_kph * CV.KPH_TO_MS, self.curve_speed_ms) * self.speed_conv_to_clu  
       curv_limit = int(max_speed_clu)
     else:
       max_speed_clu = self.kph_to_clu(controls.v_cruise_kph)
