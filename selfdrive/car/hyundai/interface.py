@@ -432,24 +432,25 @@ class CarInterface(CarInterfaceBase):
     if self.CC.turning_indicator_alert:
       events.add(EventName.turningIndicatorOn)
 
-  # handle button presses
-    for b in ret.buttonEvents:
-        # do disable on button down
-        if b.type == ButtonType.cancel and b.pressed:
-            events.add(EventName.buttonCancel)
-        if self.CC.longcontrol and not self.CC.scc_live:
-            # do enable on both accel and decel buttons
-            if b.type in [ButtonType.accelCruise, ButtonType.decelCruise] and not b.pressed:
-                events.add(EventName.buttonEnable)
-            # wrongCarMode/pcmDisable 자동 제거 로직 비활성화
-            # if EventName.wrongCarMode in events.events:
-            #     events.events.remove(EventName.wrongCarMode)
-            # if EventName.pcmDisable in events.events:
-            #     events.events.remove(EventName.pcmDisable)
-        elif not self.CC.longcontrol and ret.cruiseState.enabled:
-            # do enable on decel button only
-            if b.type == ButtonType.decelCruise and not b.pressed:
-                events.add(EventName.buttonEnable)
+ # handle button presses             (0)
+····for b in ret.buttonEvents:      (4)
+········# do disable on button down (8)
+········if b.type == ButtonType.cancel and b.pressed:    (8)
+············events.add(EventName.buttonCancel)          (12)
+········if self.CC.longcontrol and not self.CC.scc_live: (8)
+············# do enable on both accel and decel buttons  (12)
+············if b.type in [ButtonType.accelCruise, ButtonType.decelCruise] and not b.pressed: (12)
+················events.add(EventName.buttonEnable)       (16)
+············# wrongCarMode/pcmDisable 자동 제거 로직 비활성화 (12)
+············# if EventName.wrongCarMode in events.events:     (12)
+············#····events.events.remove(EventName.wrongCarMode) (16)
+············# if EventName.pcmDisable in events.events:        (12)
+············#····events.events.remove(EventName.pcmDisable)   (16)
+········elif not self.CC.longcontrol and ret.cruiseState.enabled: (8)
+············# do enable on decel button only                  (12)
+············if b.type == ButtonType.decelCruise and not b.pressed: (12)
+················events.add(EventName.buttonEnable)            (16)
+
 
     # scc smoother
     if self.CC.scc_smoother is not None:
