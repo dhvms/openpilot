@@ -107,6 +107,7 @@ class LongControl:
       a_target_factor = ntune_scc_get('accelTargetFactor') if long_plan.aTarget > 0 else ntune_scc_get('decelTargetFactor')
       output_accel = self.pid.update(error, speed=CS.vEgo,
                                      feedforward=long_plan.aTarget * a_target_factor)
+      print(f"[LongControl] vEgo={CS.vEgo:.2f}  error={error:.3f}  aTarget={long_plan.aTarget:.3f}  factor={a_target_factor:.2f}  ff={long_plan.aTarget * a_target_factor:.3f}  accelOut={output_accel:.3f}")
 
       self.stopping_accel_weight = max(self.stopping_accel_weight - 2. * DT_CTRL, 0.)
       output_accel = self.last_output_accel * self.stopping_accel_weight + output_accel * (1. - self.stopping_accel_weight)
