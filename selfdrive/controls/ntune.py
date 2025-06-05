@@ -255,6 +255,10 @@ class nTune():
         else:
           self.config["useLiveSteerRatio"] = 1.
           self.config["steerRatio"] = round(self.CP.steerRatio, 2)
+          self.config["steerRateCost"] = 0.35
+          self.config["steerActuatorDelay"] = 0.15
+          self.config["maxLatAccel"] = 2.2
+          self.config["friction"] = 0.1
 
     except:
       pass
