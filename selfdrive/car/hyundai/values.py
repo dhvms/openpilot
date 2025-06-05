@@ -12,7 +12,7 @@ from openpilot.selfdrive.car.fw_query_definitions import FwQueryConfig, Request,
 Ecu = car.CarParams.Ecu
 
 
-class CarControllerParams:
+CarControllerParams:
   ACCEL_MIN = -3.5 # m/s
   ACCEL_MAX = 2.0 # m/s
 
@@ -51,7 +51,7 @@ class CarControllerParams:
       self.STEER_MAX = 384
 
 
-class HyundaiFlags(IntFlag):
+HyundaiFlags(IntFlag):
   # Dynamic Flags
   CANFD_HDA2 = 1
   CANFD_ALT_BUTTONS = 2
@@ -100,7 +100,7 @@ class HyundaiFlags(IntFlag):
   LKAS12 = 2 ** 25
   NAV_MSG = 2 ** 26
 
-class Footnote(Enum):
+Footnote(Enum):
   CANFD = CarFootnote(
     "Requires a <a href=\"https://comma.ai/shop/can-fd-panda-kit\" target=\"_blank\">CAN FD panda kit</a> if not using " +
     "comma 3X for this <a href=\"https://en.wikipedia.org/wiki/CAN_FD\" target=\"_blank\">CAN FD car</a>.",
@@ -108,7 +108,7 @@ class Footnote(Enum):
 
 
 @dataclass
-class HyundaiCarDocs(CarDocs):
+HyundaiCarDocs(CarDocs):
   package: str = "Smart Cruise Control (SCC)"
 
   def init_make(self, CP: car.CarParams):
@@ -117,7 +117,7 @@ class HyundaiCarDocs(CarDocs):
 
 
 @dataclass
-class HyundaiPlatformConfig(PlatformConfig):
+HyundaiPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict("hyundai_kia_generic", None))
 
   def init(self):
@@ -129,14 +129,14 @@ class HyundaiPlatformConfig(PlatformConfig):
 
 
 @dataclass
-class HyundaiCanFDPlatformConfig(PlatformConfig):
+HyundaiCanFDPlatformConfig(PlatformConfig):
   dbc_dict: DbcDict = field(default_factory=lambda: dbc_dict("hyundai_canfd", None))
 
   def init(self):
     self.flags |= HyundaiFlags.CANFD
 
 
-class CAR(Platforms):
+CAR(Platforms):
   # Hyundai
   HYUNDAI_AZERA_6TH_GEN = HyundaiPlatformConfig(
     [HyundaiCarDocs("Hyundai Azera 2022", "All", car_parts=CarParts.common([CarHarness.hyundai_k]))],
@@ -553,7 +553,7 @@ class CAR(Platforms):
   )
 
 
-class Buttons:
+Buttons:
   NONE = 0
   RES_ACCEL = 1
   SET_DECEL = 2
