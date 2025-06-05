@@ -78,10 +78,12 @@ class Controls:
     x = max(lp.stiffnessFactor, 0.1)
     #sr = max(lp.steerRatio, 0.1)
 
-    if ntune_common_enabled('useLiveSteerRatio'):
-      sr = max(lp.steerRatio, 0.1)
-    else:
-      sr = max(ntune_common_get('steerRatio'), 0.1)
+    sr = 17.0
+
+    #if ntune_common_enabled('useLiveSteerRatio'):
+     # sr = max(lp.steerRatio, 0.1)
+   # else:
+    #  sr = max(ntune_common_get('steerRatio'), 0.1)
 
     self.VM.update_params(x, sr)
 
