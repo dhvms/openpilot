@@ -40,52 +40,26 @@ DeveloperPanel::DeveloperPanel(SettingsWindow *parent) : ListWidget(parent) {
   });
   addItem(experimentalLongitudinalToggle);
 
-  // Joystick and longitudinal maneuvers should be hidden on release branches
-  is_release = params.getBool("IsReleaseBranch");
+  is_release = false;
 
-  // Toggles should be not available to change in onroad state
   QObject::connect(uiState(), &UIState::offroadTransition, this, &DeveloperPanel::updateToggles);
 }
 
 void DeveloperPanel::updateToggles(bool _offroad) {
+  // 모든 버튼 항상 보이게, 항상 활성화
   for (auto btn : findChildren<ParamControl *>()) {
-    btn->setVisible(!is_release);
-
-    /*
-     * experimentalLongitudinalToggle should be toggelable when:
-     * - visible, and
-     * - during onroad & offroad states
-     */
-    if (btn != experimentalLongitudinalToggle) {
-      btn->setEnabled(_offroad);
-    }
+    btn->setVisible(true);
+    btn->setEnabled(true);
   }
 
-  // longManeuverToggle and experimentalLongitudinalToggle should not be toggleable if the car does not have longitudinal control
-  auto cp_bytes = params.get("CarParamsPersistent");
-  if (!cp_bytes.empty()) {
-    AlignedBuffer aligned_buf;
-    capnp::FlatArrayMessageReader cmsg(aligned_buf.align(cp_bytes.data(), cp_bytes.size()));
-    cereal::CarParams::Reader CP = cmsg.getRoot<cereal::CarParams>();
+  // Long 및 Experimental 토글도 항상 활성화
+  experimentalLongitudinalToggle->setVisible(true);
+  experimentalLongitudinalToggle->setEnabled(true);
+  longManeuverToggle->setVisible(true);
+  longManeuverToggle->setEnabled(true);
 
-    if (!CP.getAlphaLongitudinalAvailable() || is_release) {
-      params.remove("AlphaLongitudinalEnabled");
-      experimentalLongitudinalToggle->setEnabled(false);
-    }
-
-    /*
-     * experimentalLongitudinalToggle should be visible when:
-     * - is not a release branch, and
-     * - the car supports experimental longitudinal control (alpha)
-     */
-    experimentalLongitudinalToggle->setVisible(CP.getAlphaLongitudinalAvailable() && !is_release);
-
-    longManeuverToggle->setEnabled(hasLongitudinalControl(CP) && _offroad);
-  } else {
-    longManeuverToggle->setEnabled(false);
-    experimentalLongitudinalToggle->setVisible(false);
-  }
   experimentalLongitudinalToggle->refresh();
+  longManeuverToggle->refresh();
 
   offroad = _offroad;
 }
