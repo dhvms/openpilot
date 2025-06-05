@@ -84,8 +84,17 @@ class CarInterface(CarInterfaceBase):
     ret.steerLimitTimer = 0.4
     CarInterfaceBase.configure_torque_tune(candidate, ret.lateralTuning)
 
-    if candidate == CAR.KIA_OPTIMA_G4_FL:
-      ret.steerActuatorDelay = 0.2
+   if candidate == CAR.KIA_OPTIMA_G4_FL:
+    ret.steerActuatorDelay = 0.2
+
+elif candidate == CAR.KIA_K7:
+    ret.lateralTuning.torque.useSteeringAngle = True
+    ret.lateralTuning.torque.latAccelFactor = 2.7
+    ret.lateralTuning.torque.friction = 0.1
+    ret.lateralTuning.torque.steeringAngleDeadzoneDeg = 0.0
+
+
+
 
     # *** longitudinal control ***
     if candidate in CANFD_CAR:
