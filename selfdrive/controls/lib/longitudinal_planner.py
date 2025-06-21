@@ -120,6 +120,14 @@ class Planner:
     # Interpolate 0.05 seconds and save as starting point for next iteration
     a_prev = self.a_desired
     self.a_desired = float(interp(DT_MDL, T_IDXS[:CONTROL_N], self.a_desired_trajectory))
+   # 강제 감속 로직 개선
+    if sm['radarState'].leadOne.status:
+  d_rel = sm['radarState'].leadOne.dRel
+  v_rel = sm['radarState'].leadOne.vRel
+    if d_rel < 15.0 and v_rel < 0.0:
+    decel_force = np.clip(-v_rel * 0.5, 0.4, 1.2)  # 상대속도에 비례해서 감속량 조절
+    self.a_desired = min(self.a_desired, -decel_force)
+    cloudlog.info(f"[NEOKII PATCH] 앞차 감지 → 강제 감속 적용: d={d_rel:.1f}m, v_rel={v_rel:.1f}m/s, 감속={-decel_force:.2f}m/s²")
     self.v_desired_filter.x = self.v_desired_filter.x + DT_MDL * (self.a_desired + a_prev) / 2.0
 
   def publish(self, sm, pm):
