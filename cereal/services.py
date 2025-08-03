@@ -75,7 +75,6 @@ _services: dict[str, tuple] = {
   "userFlag": (True, 0., 1),
   "soundPressure": (True, 10., 10),
   "rawAudioData": (False, 20.),
-  "microphone": (True, 10., 10),
 
   "naviData": (False, 0.),
   "naviGps": (False, 0.),

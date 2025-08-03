@@ -13,10 +13,10 @@ import struct
 from collections import deque
 from threading import Thread
 from cereal import messaging
+from openpilot.common.constants import CV
 from openpilot.common.numpy_fast import clip, interp, mean
 from openpilot.common.realtime import Ratekeeper
 from openpilot.common.params import Params
-from openpilot.common.conversions import Conversions as CV
 import time
 
 CAMERA_SPEED_FACTOR = 1.05
