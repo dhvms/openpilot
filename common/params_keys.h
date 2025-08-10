@@ -135,7 +135,7 @@ inline static std::unordered_map<std::string, ParamKeyAttributes> keys = {
     {"SelectedCar_v2", {PERSISTENT, STRING}},
     {"SccOnBus2", {PERSISTENT, BOOL}},
     {"CruiseStateControl", {PERSISTENT, BOOL}},
-    {"SccGapAdjust", {PERSISTENT, INT}},
+    {"SccGapAdjust", {PERSISTENT, STRING}},
     {"IsLdwsCar", {PERSISTENT, BOOL}},
     {"HapticFeedbackWhenSpeedCamera", {PERSISTENT, BOOL}},
     {"UseExternalNaviRoutes", {PERSISTENT, BOOL, "1"}},
