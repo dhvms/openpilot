@@ -400,8 +400,15 @@ class CarState(CarStateBase):
     return ret
 
   def get_can_parsers_canfd(self, CP):
+    msgs = []
+    if not (CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS):
+      # TODO: this can be removed once we add dynamic support to vl_all
+      msgs += [
+        # this message is 50Hz but the ECU frequently stops transmitting for ~0.5s
+        ("CRUISE_BUTTONS", 1)
+      ]
     return {
-      Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], [("CRUISE_BUTTONS", 50), ], CanBus(CP).ECAN),
+      Bus.pt: CANParser(DBC[CP.carFingerprint][Bus.pt], msgs, CanBus(CP).ECAN),
       Bus.cam: CANParser(DBC[CP.carFingerprint][Bus.pt], [], CanBus(CP).CAM),
     }
 
