@@ -400,7 +400,11 @@ class CarState(CarStateBase):
     return ret
 
   def get_can_parsers_canfd(self, CP):
-    msgs = []
+    msgs = [
+      ("BRAKE", 0),
+      ("TPMS", 0),
+      ("ESP_STATUS", 0)
+    ]
     if not (CP.flags & HyundaiFlags.CANFD_ALT_BUTTONS):
       # TODO: this can be removed once we add dynamic support to vl_all
       msgs += [
