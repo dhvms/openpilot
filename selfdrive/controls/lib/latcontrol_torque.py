@@ -25,6 +25,9 @@ from openpilot.selfdrive.controls.ntune import nTune
 
 LOW_SPEED_X = [0, 10, 20, 30]
 LOW_SPEED_Y = [15, 13, 10, 5]
+KP = 1.0
+KI = 0.3
+KD = 0.0
 
 
 class LatControlTorque(LatControl):
@@ -33,13 +36,11 @@ class LatControlTorque(LatControl):
     self.torque_params = CP.lateralTuning.torque.as_builder()
     self.torque_from_lateral_accel = CI.torque_from_lateral_accel()
     self.lateral_accel_from_torque = CI.lateral_accel_from_torque()
-    self.pid = PIDController(self.torque_params.kp, self.torque_params.ki, rate=1/self.dt)
+    self.pid = PIDController(KP, KI, k_d=KD, rate=1/self.dt)
     self.update_limits()
     self.steering_angle_deadzone_deg = self.torque_params.steeringAngleDeadzoneDeg
     self.LATACCEL_REQUEST_BUFFER_NUM_FRAMES = int(1 / self.dt)
-    self.requested_lateral_accel_buffer = deque([0.] * self.LATACCEL_REQUEST_BUFFER_NUM_FRAMES,
-                                                maxlen=self.LATACCEL_REQUEST_BUFFER_NUM_FRAMES)
-
+    self.requested_lateral_accel_buffer = deque([0.] * self.LATACCEL_REQUEST_BUFFER_NUM_FRAMES , maxlen=self.LATACCEL_REQUEST_BUFFER_NUM_FRAMES)
     self.previous_measurement = 0.0
     self.measurement_rate_filter = FirstOrderFilter(0.0, 1 / (2 * np.pi * (MAX_LAT_JERK_UP - 0.5)), self.dt)
 
@@ -67,6 +68,7 @@ class LatControlTorque(LatControl):
       roll_compensation = params.roll * ACCELERATION_DUE_TO_GRAVITY
       curvature_deadzone = abs(VM.calc_curvature(math.radians(self.steering_angle_deadzone_deg), CS.vEgo, 0.0))
       lateral_accel_deadzone = curvature_deadzone * CS.vEgo ** 2
+
       delay_frames = int(np.clip(lat_delay / self.dt, 1, self.LATACCEL_REQUEST_BUFFER_NUM_FRAMES))
       expected_lateral_accel = self.requested_lateral_accel_buffer[-delay_frames]
       # TODO factor out lateral jerk from error to later replace it with delay independent alternative
@@ -75,8 +77,6 @@ class LatControlTorque(LatControl):
       gravity_adjusted_future_lateral_accel = future_desired_lateral_accel - roll_compensation
       desired_lateral_jerk = (future_desired_lateral_accel - expected_lateral_accel) / lat_delay
 
-      # desired rate is the desired rate of change in the setpoint, not the absolute desired curvature
-      # desired_lateral_jerk = desired_curvature_rate * CS.vEgo ** 2
       measurement = measured_curvature * CS.vEgo ** 2
       measurement_rate = self.measurement_rate_filter.update((measurement - self.previous_measurement) / self.dt)
       self.previous_measurement = measurement
@@ -84,7 +84,7 @@ class LatControlTorque(LatControl):
       low_speed_factor = (np.interp(CS.vEgo, LOW_SPEED_X, LOW_SPEED_Y) / max(CS.vEgo, MIN_SPEED)) ** 2
       setpoint = lat_delay * desired_lateral_jerk + expected_lateral_accel
       error = setpoint - measurement
-      error_lsf = error + low_speed_factor * error
+      error_lsf = error + low_speed_factor / KP * error
 
       # do error correction in lateral acceleration space, convert at end to handle non-linear torque responses correctly
       pid_log.error = float(error_lsf)
@@ -96,7 +96,7 @@ class LatControlTorque(LatControl):
 
       freeze_integrator = steer_limited_by_safety or CS.steeringPressed or CS.vEgo < 5
       output_lataccel = self.pid.update(pid_log.error,
-                                        -measurement_rate,
+                                       -measurement_rate,
                                         feedforward=ff,
                                         speed=CS.vEgo,
                                         freeze_integrator=freeze_integrator)
